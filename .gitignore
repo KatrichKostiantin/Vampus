@@ -4,7 +4,7 @@
 *.iml
 *.ipr
 
-out
+output
 .classpath
 .project
 /bin/
