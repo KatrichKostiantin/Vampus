@@ -10,18 +10,6 @@ import java.util.Random;
 public class Board extends JPanel implements ActionListener {
     static final int BLOCK_SIZE = 64;
     private static final int DEFAULT_COUNT_OF_HOLES = 2;
-
-    public static int getN() {
-        return n;
-    }
-
-    private static final int n = 5;
-
-    public static int getM() {
-        return m;
-    }
-
-    private static final int m = 5;
     private static Image vampus, gold, wind, smell, hole;
     public Timer timer;
     public short[][] screenData = {
@@ -31,28 +19,28 @@ public class Board extends JPanel implements ActionListener {
             {0, 0, 0, 1, 1},
             {8, 0, 0, 0, 0}
     };
-    public Cell[][] cells = new Cell[n][m];
-    private int curNumHoles = 0;
-    private int curNumWalls = 5;
+    public Cell[][] cells = new Cell[screenData.length][screenData[0].length];
     private Random random = new Random();
     private Dimension d;
     private Color mazeColor;
-    private int level = 0;
-    private int scope = 0;
 
-    private Point Agent_START = new Point(0, n - 1);
+    private Agent agent;
+
+    private final Point AGENT_START = new Point(0, screenData.length - 1);
 
     public Board() {
         initVariables();
         fillScreenDataSTR();
         generateLevelData();
         initBoard();
+
+        agent = new Agent(this, AGENT_START);
     }
 
     private void fillScreenDataSTR() {
-        for (int i = 0; i < n; i++)
-            for (int j = 0; j < m; j++) {
-                cells[i][j] = new Cell(new ArrayList<Value>(), new Point(j, i));
+        for (int i = 0; i < screenData.length; i++)
+            for (int j = 0; j < screenData[i].length; j++) {
+                cells[i][j] = new Cell(new ArrayList<>(), new Point(j, i));
                 if (screenData[i][j] == 9) cells[i][j].value.add(Value.Glitter);
                 else if (screenData[i][j] == 1) cells[i][j].value.add(Value.Wall);
             }
@@ -62,41 +50,49 @@ public class Board extends JPanel implements ActionListener {
     private void generateLevelData() {
         Point p;
         // holes
-        curNumHoles = Math.round((n * m - 6) * 2 / 10);
+        int curNumHoles = Math.round((screenData.length * screenData[0].length - 6) * 2 / 10);
         for (int i = 0; i < curNumHoles; i++) {
             p = searchEmptyPoint(screenData);
             screenData[p.y][p.x] += 2;
             cells[p.y][p.x].value.add(Value.Hole);
-            if (p.y + 1 < n) if (isEmptyForBreeze(new Point(p.x, p.y + 1))) cells[p.y + 1][p.x].value.add(Value.Breeze);
-            if (p.x + 1 < m) if (isEmptyForBreeze(new Point(p.x + 1, p.y))) cells[p.y][p.x + 1].value.add(Value.Breeze);
-            if (p.y - 1 >= 0)
-                if (isEmptyForBreeze(new Point(p.x, p.y - 1))) cells[p.y - 1][p.x].value.add(Value.Breeze);
-            if (p.x - 1 >= 0)
-                if (isEmptyForBreeze(new Point(p.x - 1, p.y))) cells[p.y][p.x - 1].value.add(Value.Breeze);
+            createBreeze(p.x + 1, p.y);
+            createBreeze(p.x - 1, p.y);
+            createBreeze(p.x, p.y + 1);
+            createBreeze(p.x, p.y - 1);
         }
 
         // vampus
         p = searchEmptyPoint(screenData);
         screenData[p.y][p.x] = 3;
         cells[p.y][p.x].value.add(Value.Vampus);
-        if (p.y + 1 < n) if (isEmptyForStench(new Point(p.x, p.y + 1))) cells[p.y + 1][p.x].value.add(Value.Stench);
-        if (p.x + 1 < m) if (isEmptyForStench(new Point(p.x + 1, p.y))) cells[p.y][p.x + 1].value.add(Value.Stench);
-        if (p.y - 1 >= 0) if (isEmptyForStench(new Point(p.x, p.y - 1))) cells[p.y - 1][p.x].value.add(Value.Stench);
-        if (p.x - 1 >= 0) if (isEmptyForStench(new Point(p.x - 1, p.y))) cells[p.y][p.x - 1].value.add(Value.Stench);
+        createStench(p.x + 1, p.y);
+        createStench(p.x - 1, p.y);
+        createStench(p.x, p.y + 1);
+        createStench(p.x, p.y - 1);
     }
 
-    private boolean isEmptyForBreeze(Point p) {
-        if (cells[p.y][p.x].value.contains(Value.Hole)) return false;
-        if (cells[p.y][p.x].value.contains(Value.Breeze)) return false;
-        if (cells[p.y][p.x].value.contains(Value.Wall)) return false;
-        return !cells[p.y][p.x].value.contains(Value.Glitter);
+    private void createBreeze(int x, int y) {
+        if (y >= 0 && y < screenData.length && x < screenData[0].length && x >= 0 && isEmptyForBreeze(x, y))
+            cells[y][x].value.add(Value.Breeze);
     }
 
-    private boolean isEmptyForStench(Point p) {
-        if (cells[p.y][p.x].value.contains(Value.Hole)) return false;
-        if (cells[p.y][p.x].value.contains(Value.Stench)) return false;
-        if (cells[p.y][p.x].value.contains(Value.Wall)) return false;
-        return !cells[p.y][p.x].value.contains(Value.Glitter);
+    private void createStench(int x, int y) {
+        if (y >= 0 && y < screenData.length && x < screenData[0].length && x >= 0 && isEmptyForStench(x, y))
+            cells[y][x].value.add(Value.Stench);
+    }
+
+    private boolean isEmptyForBreeze(int x, int y) {
+        if (cells[y][x].value.contains(Value.Hole)) return false;
+        if (cells[y][x].value.contains(Value.Breeze)) return false;
+        if (cells[y][x].value.contains(Value.Wall)) return false;
+        return !cells[y][x].value.contains(Value.Glitter);
+    }
+
+    private boolean isEmptyForStench(int x, int y) {
+        if (cells[y][x].value.contains(Value.Hole)) return false;
+        if (cells[y][x].value.contains(Value.Stench)) return false;
+        if (cells[y][x].value.contains(Value.Wall)) return false;
+        return !cells[y][x].value.contains(Value.Glitter);
     }
 
     private void initBoard() {
@@ -114,9 +110,9 @@ public class Board extends JPanel implements ActionListener {
     }
 
     private void initVariables() {
+        cells = new Cell[screenData.length][screenData[0].length];
         mazeColor = new Color(5, 100, 5);
         d = new Dimension(400, 400);
-
         timer = new Timer(20, this);
         timer.start();
     }
@@ -187,8 +183,7 @@ public class Board extends JPanel implements ActionListener {
         g2d.setColor(Color.BLACK);
 
         drawMaze(g2d);
-        //  pacman.step(g2d);
-        // ghosts.forEach(ghost -> ghost.step(g2d));
+
         Toolkit.getDefaultToolkit().sync();
         g2d.dispose();
     }
@@ -206,7 +201,7 @@ public class Board extends JPanel implements ActionListener {
     private Point searchEmptyPoint(short[][] levelData) {
         Point randomPoint;
         do {
-            randomPoint = new Point(random.nextInt(5), random.nextInt(5));
+            randomPoint = new Point(random.nextInt(screenData[0].length), random.nextInt(screenData.length));
             if (levelData[randomPoint.y][randomPoint.x] != 0 && levelData[randomPoint.y][randomPoint.x] != 9)
                 continue;
             break;
