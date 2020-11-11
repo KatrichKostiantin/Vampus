@@ -10,8 +10,18 @@ import java.util.Random;
 public class Board extends JPanel implements ActionListener {
     static final int BLOCK_SIZE = 64;
     private static final int DEFAULT_COUNT_OF_HOLES = 2;
-    private static int n = 5;
-    private static int m = 5;
+
+    public static int getN() {
+        return n;
+    }
+
+    private static final int n = 5;
+
+    public static int getM() {
+        return m;
+    }
+
+    private static final int m = 5;
     private static Image vampus, gold, wind, smell, hole;
     public Timer timer;
     public short[][] screenData = {

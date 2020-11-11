@@ -8,6 +8,8 @@ import org.logicng.solvers.SolverState;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.Iterator;
 
 public class Agent {
     final FormulaFactory f = new FormulaFactory();
@@ -31,18 +33,31 @@ public class Agent {
     public void tellInformation(String info) throws ParserException {
         miniSat.add(p.parse(info)); // не А = ~A
 
-         /*Тут мы заполняем базу тем что сами узнали когда ходили по миру
-        miniSat.add(f.variable("B21")); = Ветер в точке 2, 1
-        miniSat.add(f.not(f.variable("P11"))); = ямы нет в точке 1, 1
-        miniSat.add(f.not(f.variable("B11"))); = Ветра нет в точке 1, 1
-        miniSat.add(f.not(f.variable("B12"))); = ветра нет в точке 1, 2*/
+        /*Тут мы заполняем базу тем что сами узнали когда ходили по миру
+        miniSat.add(f.variable("B21")); //= Ветер в точке 2, 1
+        miniSat.add(f.not(f.variable("P11")));// = ямы нет в точке 1, 1
+        miniSat.add(f.not(f.variable("B11")));// = Ветра нет в точке 1, 1
+        miniSat.add(f.not(f.variable("B12")));// = ветра нет в точке 1, 2*/
     }
 
     private void initKnowledgeBase() throws ParserException {
-        miniSat.add(p.parse("B12 <=> (P11 | P22 | P13)"));
-        miniSat.add(p.parse("B21 <=> (P11 | P22 | P31)"));
-        miniSat.add(p.parse("B11 <=> (P12 | P21)"));
-        miniSat.add(p.parse("P22 <=> (B12 & B21 & B23 & B32)"));
+//        miniSat.add(p.parse("B12 <=> (H11 | H22 | H13)"));
+//        miniSat.add(p.parse("B13 <=> (H12 | H23 | H14)"));
+//        miniSat.add(p.parse("B21 <=> (H11 | H22 | H31)"));
+//        miniSat.add(p.parse("B11 <=> (H12 | H21)"));
+//        miniSat.add(p.parse("H22 <=> (B12 & B21 & B23 & B32)"));
+
+
+        int i, j;
+        for (i = 0; i < board.getN(); i++) {
+            for (j = 0; j < board.getM(); j++) {
+                if (board.cells[i][j].value.contains("Stench")) fillingLogicalTable("S","|","V",i,j);
+                if (board.cells[i][j].value.contains("Stench")) fillingLogicalTable("B","|","H",i,j);
+                if (board.cells[i][j].value.contains("Stench")) fillingLogicalTable("V","&","S",i,j);
+                if (board.cells[i][j].value.contains("Stench")) fillingLogicalTable("H","&","B",i,j);
+            }
+            }
+
 
         /*Тут мы заполняем изначальную базу которую должны знать.
         * Тип "Если веьер в (1, 2) то яма либо в (1,1) либо (2, 2) либо (1, 3)
@@ -51,7 +66,47 @@ public class Agent {
         * Тут будет много текста. Нужно навесить условия прям на все точки на все вариации.
         * Если там ветер, яма, запах, Вампул, блистит
         *
-        * */
+        */
+    }
+
+    private void fillingLogicalTable(String leftSymbol, String middleSymbol, String rightSymbol, int i, int j) throws ParserException {
+        ArrayList<String> mates = new ArrayList<>();
+        String leftSide = "";
+        leftSide += leftSymbol + i + j + " <=> ";
+        if (i >= 1)
+            if (board.screenData[i - 1][j] != 1) {
+                String c1 = "";
+                c1 = rightSymbol + (i - 1) + j;
+                mates.add(c1);
+            }
+        if (i < board.getN()-1)
+            if(board.screenData[i+1][j]!=1) {
+                String c1 = "";
+                c1 = rightSymbol + (i+1) +j;
+                mates.add(c1);
+            }
+        if (j >= 1)
+            if(board.screenData[i][j-1]!=1) {
+                String c1 = "";
+                c1 = rightSymbol + i + (j-1);
+                mates.add(c1);
+            }
+        if (j < board.getM())
+            if(board.screenData[i][j+1]!=1) {
+                String c1 = "";
+                c1 = rightSymbol + i + (j+1);
+                mates.add(c1);
+            }
+        String rightSide = "";
+            int len = mates.size();
+            if(len>1) rightSide += "(" + mates.get(0);
+            for(int k = 1; k<len; k++){
+                rightSide += middleSymbol + mates.get(k);
+            }
+            if(len>1) rightSide+=")";
+            String logic = leftSide + rightSide;
+
+            miniSat.add(p.parse(logic));
     }
 
     public boolean askInformation(String info) throws ParserException {
