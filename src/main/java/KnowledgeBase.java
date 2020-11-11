@@ -4,7 +4,6 @@ import org.logicng.io.parsers.ParserException;
 import org.logicng.io.parsers.PropositionalParser;
 import org.logicng.solvers.MiniSat;
 import org.logicng.solvers.SATSolver;
-import org.logicng.solvers.SolverState;
 
 import java.util.ArrayList;
 
@@ -13,24 +12,10 @@ public class KnowledgeBase {
     final PropositionalParser p = new PropositionalParser(f);
     final SATSolver miniSat = MiniSat.miniSat(f);
     private Board board;
+    private ArrayList<String> tellInformation = new ArrayList<>();
 
     public KnowledgeBase(Board board) {
         this.board = board;
-        try {
-            int i, j;
-            for (i = 0; i < board.screenData.length; i++) {
-                for (j = 0; j < board.screenData[0].length; j++) {
-                    if (board.screenData[i][j] != 1) {
-                        fillingLogicalTable("S", " | ", "V", i, j);
-                        fillingLogicalTable("B", " | ", "H", i, j);
-                        fillingLogicalTable("V", " & ", "S", i, j);
-                        fillingLogicalTable("H", " & ", "B", i, j);
-                    }
-                }
-            }
-        } catch (ParserException e) {
-            e.printStackTrace();
-        }
     }
 
     private void fillingLogicalTable(String leftSymbol, String middleSymbol, String rightSymbol, int i, int j) throws ParserException {
@@ -73,29 +58,52 @@ public class KnowledgeBase {
             rightSide = mates.get(0);
 
         String logic = leftSide + rightSide;
-        System.out.println(logic);
+        System.out.println("miniSat.add(p.parse(\"" + logic + "\"));");
         miniSat.add(p.parse(logic));
     }
 
     public void tellInformation(String info) {
+        tellInformation.add(info);
+    }
+
+    public boolean askInformation(String info) {
         try {
-            miniSat.add(p.parse(info)); // не А = ~A
+            miniSat.reset();
+            addAxioms(miniSat);
+            addTellInformation(miniSat);
+            miniSat.add(p.parse(info));
+            return miniSat.sat() == Tristate.TRUE;
+        } catch (ParserException e) {
+            e.printStackTrace();
+        }
+        return true;
+    }
+
+    private void addTellInformation(SATSolver miniSat) {
+        try {
+            for (String str : tellInformation) {
+                miniSat.add(p.parse(str));
+            }
         } catch (ParserException e) {
             e.printStackTrace();
         }
     }
 
-    public boolean askInformation(String info) {
+    private void addAxioms(SATSolver miniSat) {
         try {
-            SolverState state = miniSat.saveState();
-            final SATSolver newSat = MiniSat.miniCard(f);
-            newSat.loadState(state);
-            newSat.add(p.parse(info));
-            return newSat.sat() == Tristate.TRUE;
+            for (int i = 0; i < board.screenData.length; i++) {
+                for (int j = 0; j < board.screenData[i].length; j++) {
+                    if (board.screenData[i][j] != 1) {
+                        fillingLogicalTable("S", " | ", "V", i, j);
+                        fillingLogicalTable("B", " | ", "H", i, j);
+                        fillingLogicalTable("V", " & ", "S", i, j);
+                        fillingLogicalTable("H", " & ", "B", i, j);
+                    }
+                }
+            }
         } catch (ParserException e) {
             e.printStackTrace();
         }
-        return true;
     }
 
     public boolean sureAskInformation(String info) {

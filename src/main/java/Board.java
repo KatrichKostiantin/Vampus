@@ -1,3 +1,4 @@
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -113,7 +114,7 @@ public class Board extends JPanel implements ActionListener {
         cells = new Cell[screenData.length][screenData[0].length];
         mazeColor = new Color(5, 100, 5);
         d = new Dimension(400, 400);
-        timer = new Timer(20, this);
+        timer = new Timer(200, this);
         timer.start();
     }
 
@@ -183,6 +184,7 @@ public class Board extends JPanel implements ActionListener {
         g2d.setColor(Color.BLACK);
 
         drawMaze(g2d);
+        agent.step(g2d);
 
         Toolkit.getDefaultToolkit().sync();
         g2d.dispose();
