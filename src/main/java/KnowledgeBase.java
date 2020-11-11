@@ -58,7 +58,6 @@ public class KnowledgeBase {
             rightSide = mates.get(0);
 
         String logic = leftSide + rightSide;
-        System.out.println("miniSat.add(p.parse(\"" + logic + "\"));");
         miniSat.add(p.parse(logic));
     }
 
@@ -69,7 +68,7 @@ public class KnowledgeBase {
     public boolean askInformation(String info) {
         try {
             miniSat.reset();
-            addAxioms(miniSat);
+            addAxioms();
             addTellInformation(miniSat);
             miniSat.add(p.parse(info));
             return miniSat.sat() == Tristate.TRUE;
@@ -89,7 +88,7 @@ public class KnowledgeBase {
         }
     }
 
-    private void addAxioms(SATSolver miniSat) {
+    private void addAxioms() {
         try {
             for (int i = 0; i < board.screenData.length; i++) {
                 for (int j = 0; j < board.screenData[i].length; j++) {

@@ -1,4 +1,3 @@
-
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -11,7 +10,7 @@ import java.util.Random;
 public class Board extends JPanel implements ActionListener {
     static final int BLOCK_SIZE = 64;
     private static final int DEFAULT_COUNT_OF_HOLES = 2;
-    private static Image vampus, gold, wind, smell, hole;
+    private static Image vampus, vampusDead, scream, gold, wind, smell, hole;
     public Timer timer;
     public short[][] screenData = {
             {0, 0, 0, 0, 0},
@@ -20,14 +19,12 @@ public class Board extends JPanel implements ActionListener {
             {0, 0, 0, 1, 1},
             {8, 0, 0, 0, 0}
     };
+    private final Point AGENT_START = new Point(0, screenData.length - 1);
     public Cell[][] cells = new Cell[screenData.length][screenData[0].length];
     private Random random = new Random();
     private Dimension d;
     private Color mazeColor;
-
     private Agent agent;
-
-    private final Point AGENT_START = new Point(0, screenData.length - 1);
 
     public Board() {
         initVariables();
@@ -51,8 +48,7 @@ public class Board extends JPanel implements ActionListener {
     private void generateLevelData() {
         Point p;
         // holes
-        int curNumHoles = Math.round((screenData.length * screenData[0].length - 6) * 2 / 10);
-        for (int i = 0; i < curNumHoles; i++) {
+        for (int i = 0; i < DEFAULT_COUNT_OF_HOLES; i++) {
             p = searchEmptyPoint(screenData);
             screenData[p.y][p.x] += 2;
             cells[p.y][p.x].value.add(Value.Hole);
@@ -158,13 +154,19 @@ public class Board extends JPanel implements ActionListener {
                     g2d.drawImage(smell, x, y, BLOCK_SIZE, BLOCK_SIZE, this);
                 }
 
-
                 if (cells[i][j].value.contains(Value.Glitter)) {
                     g2d.drawImage(gold, x, y, BLOCK_SIZE, BLOCK_SIZE, this);
                 }
 
                 if (cells[i][j].value.contains(Value.Vampus)) {
-                    g2d.drawImage(vampus, x, y, BLOCK_SIZE, BLOCK_SIZE, this);
+                    if (agent.isVampusDead)
+                        g2d.drawImage(vampusDead, x, y, BLOCK_SIZE, BLOCK_SIZE, this);
+                    else
+                        g2d.drawImage(vampus, x, y, BLOCK_SIZE, BLOCK_SIZE, this);
+                }
+
+                if (cells[i][j].value.contains(Value.Scream)) {
+                    g2d.drawImage(scream, x, y, BLOCK_SIZE, BLOCK_SIZE, this);
                 }
 
             }
