@@ -16,6 +16,7 @@ public class Agent {
     private KnowledgeBase knowledgeBase;
     private int directionAgentX, directionAgentY;
     private ArrayList<Point> listInfo;
+    private boolean isVampusDead = false;
     private Deque<Point> pointDeque = new ArrayDeque<>();
     final FormulaFactory f = new FormulaFactory();
 
@@ -121,6 +122,15 @@ public class Agent {
         directionAgentY = (y - agentY);
         agentX = x;
         agentY = y;
+        String result = checkOnGameOver(y,x);
+        if(!result.equals("Nothing")) {System.out.println(result); board.stop();}
+    }
+
+    private String checkOnGameOver(int y, int x) {
+        if(board.cells[y][x].value.contains(Value.Hole) || (board.cells[y][x].value.contains(Value.Vampus) && !isVampusDead)) return "You are dead!";
+        if(board.cells[y][x].value.contains(Value.Glitter)) return "You are won!";
+        return "Nothing";
+
     }
 
     public void drawAgent(Graphics2D g2d) {

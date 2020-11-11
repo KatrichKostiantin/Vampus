@@ -98,6 +98,7 @@ public class KnowledgeBase {
                         fillingLogicalTable("B", " | ", "H", i, j);
                         fillingLogicalTable("V", " & ", "S", i, j);
                         fillingLogicalTable("H", " & ", "B", i, j);
+
                     }
                 }
             }
