@@ -1,5 +1,3 @@
-import org.logicng.formulas.FormulaFactory;
-
 import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayDeque;
@@ -10,23 +8,22 @@ public class Agent {
     private static final int ANIMATION_STEPS = 5;
     private static Image agentR, agentL;
     public int agentX, agentY;
+    public boolean isVampusDead = false;
     Board board;
     int additionAnimationY = 0, additionAnimationX = 0;
     int animationCount = 0;
     private KnowledgeBase knowledgeBase;
-    private int directionAgentX, directionAgentY;
+    private int directionAgentX;
     private ArrayList<Point> listInfo;
-    private boolean isVampusDead = false;
     private Deque<Point> pointDeque = new ArrayDeque<>();
-    final FormulaFactory f = new FormulaFactory();
 
     public Agent(Board board, Point start) {
         this.board = board;
         knowledgeBase = new KnowledgeBase(board);
         initAgentImages();
         listInfo = new ArrayList<>();
-        listInfo.add(start);
         moveAgentTo(start.y, start.x);
+        pointDeque.add(start);
     }
 
     void initAgentImages() {
@@ -35,31 +32,61 @@ public class Agent {
     }
 
     public void step(Graphics2D g2d) {
-        drawAgent(g2d);
         animationCount %= ANIMATION_STEPS;
         if (animationCount++ == 0) {
             tellInformation();
             addPointsToQueue();
             askInformation();
+            if (!isVampusDead) checkVampusPosition();
             animationMoveAgent();
+        }
+        drawAgent(g2d);
+    }
+
+    private void checkVampusPosition() {
+        for (Point point : pointDeque)
+            if (knowledgeBase.sureAskInformation("V" + point.x + "" + point.y))
+                killVampus(point);
+    }
+
+    private void killVampus(Point pointVampus) {
+        for (Point pointAgent : listInfo) {
+            if (pointAgent.x == pointVampus.x || pointAgent.y == pointVampus.y) {
+                moveAgentTo(pointAgent.y, pointAgent.x);
+                shoot(pointVampus);
+                break;
+            }
+        }
+    }
+
+    private void shoot(Point pointVampus) {
+        if (pointVampus.x == agentX || pointVampus.y == agentY) {
+            for (Cell[] cellArr : board.cells)
+                for (Cell cell : cellArr)
+                    cell.value.add(Value.Scream);
         }
     }
 
     private void askInformation() {
         Deque<Point> newPointDeque = new ArrayDeque<>();
-
+        ArrayList<Point> sureHolePoint = new ArrayList<>();
+        ArrayList<Point> holePoint = new ArrayList<>();
+        ArrayList<Point> vampusPoint = new ArrayList<>();
         for (Point point : pointDeque) {
             if (knowledgeBase.sureAskInformation("H" + point.x + "" + point.y))
-                newPointDeque.addLast(point);
+                sureHolePoint.add(point);
+
+            else if (knowledgeBase.askInformation("H" + point.x + "" + point.y))
+                holePoint.add(point);
+
+            else if ((!isVampusDead && knowledgeBase.askInformation("V" + point.x + "" + point.y)))
+                vampusPoint.add(point);
             else
                 newPointDeque.addFirst(point);
         }
-
-        /*for (Point point : pointDeque) {
-            if (knowledgeBase.sureAskInformation("G" + point.x + "" + point.y))
-                newPointDeque.addFirst(point);
-        }*/
-
+        holePoint.forEach(newPointDeque::addLast);
+        vampusPoint.forEach(newPointDeque::addLast);
+        sureHolePoint.forEach(newPointDeque::addLast);
         pointDeque = newPointDeque;
     }
 
@@ -94,7 +121,6 @@ public class Agent {
     private void tellInformation() {
         ArrayList<Value> values = board.cells[agentY][agentX].value;
 
-
         if (values.contains(Value.Breeze)) knowledgeBase.tellInformation("B" + agentX + "" + agentY);
         else knowledgeBase.tellInformation("~B" + agentX + "" + agentY);
 
@@ -109,28 +135,45 @@ public class Agent {
 
         if (values.contains(Value.Vampus)) knowledgeBase.tellInformation("V" + agentX + "" + agentY);
         else knowledgeBase.tellInformation("~V" + agentX + "" + agentY);
+
+        if (values.contains(Value.Scream))
+            isVampusDead = true;
     }
 
     void animationMoveAgent() {
         Point point = pointDeque.pollFirst();
         if (point == null) board.stop(); //END
-        else moveAgentTo(point.y, point.x);
+
+        if (checkOnGameOver(point))
+            moveAgentTo(point.y, point.x);
     }
 
     private void moveAgentTo(int y, int x) {
         directionAgentX = (x - agentX);
-        directionAgentY = (y - agentY);
         agentX = x;
         agentY = y;
-        String result = checkOnGameOver(y,x);
-        if(!result.equals("Nothing")) {System.out.println(result); board.stop();}
     }
 
-    private String checkOnGameOver(int y, int x) {
-        if(board.cells[y][x].value.contains(Value.Hole) || (board.cells[y][x].value.contains(Value.Vampus) && !isVampusDead)) return "You are dead!";
-        if(board.cells[y][x].value.contains(Value.Glitter)) return "You are won!";
-        return "Nothing";
-
+    private boolean checkOnGameOver(Point point) {
+        if (point == null) {
+            System.out.println("You cannot find gold shrug");
+            board.stop();
+            return false;
+        }
+        if (board.cells[agentY][agentX].value.contains(Value.Glitter)) {
+            if (board.cells[agentY][agentX].value.contains(Value.Hole))
+                System.out.println("You are won... or dead?");
+            else
+                System.out.println("You are won!");
+            board.stop();
+            return false;
+        }
+        if (board.cells[agentY][agentX].value.contains(Value.Hole) || (board.cells[agentY][agentX].value.contains(Value.Vampus) && !isVampusDead)) {
+            System.out.println("You are dead!");
+            board.stop();
+            return false;
+        }
+        return true;
     }
 
     public void drawAgent(Graphics2D g2d) {

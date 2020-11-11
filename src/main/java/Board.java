@@ -10,13 +10,13 @@ import java.util.Random;
 public class Board extends JPanel implements ActionListener {
     static final int BLOCK_SIZE = 64;
     private static final int DEFAULT_COUNT_OF_HOLES = 2;
-    private static Image vampus, vampusDead, scream, gold, wind, smell, hole;
+    private static Image vampus, deadVampus, scream, gold, wind, smell, hole;
     public Timer timer;
     public short[][] screenData = {
             {0, 0, 0, 0, 0},
-            {0, 1, 1, 0, 0},
-            {0, 1, 0, 9, 0},
-            {0, 0, 0, 1, 1},
+            {0, 0, 0, 0, 0},
+            {0, 0, 0, 9, 0},
+            {0, 0, 0, 0, 0},
             {8, 0, 0, 0, 0}
     };
     private final Point AGENT_START = new Point(0, screenData.length - 1);
@@ -25,6 +25,7 @@ public class Board extends JPanel implements ActionListener {
     private Dimension d;
     private Color mazeColor;
     private Agent agent;
+    private int scremCounter = 3;
 
     public Board() {
         initVariables();
@@ -100,6 +101,8 @@ public class Board extends JPanel implements ActionListener {
 
     private void initImages() {
         vampus = new ImageIcon("images/vampus.png").getImage();
+        deadVampus = new ImageIcon("images/deadVampus.png").getImage();
+        scream = new ImageIcon("images/scream.png").getImage();
         gold = new ImageIcon("images/gold.png").getImage();
         hole = new ImageIcon("images/hole.png").getImage();
         smell = new ImageIcon("images/smell.png").getImage();
@@ -118,7 +121,6 @@ public class Board extends JPanel implements ActionListener {
     public void addNotify() {
         super.addNotify();
     }
-
 
     private void drawMaze(Graphics2D g2d) {
         g2d.setStroke(new BasicStroke(2));
@@ -160,7 +162,7 @@ public class Board extends JPanel implements ActionListener {
 
                 if (cells[i][j].value.contains(Value.Vampus)) {
                     if (agent.isVampusDead)
-                        g2d.drawImage(vampusDead, x, y, BLOCK_SIZE, BLOCK_SIZE, this);
+                        g2d.drawImage(deadVampus, x, y, BLOCK_SIZE, BLOCK_SIZE, this);
                     else
                         g2d.drawImage(vampus, x, y, BLOCK_SIZE, BLOCK_SIZE, this);
                 }
@@ -168,7 +170,6 @@ public class Board extends JPanel implements ActionListener {
                 if (cells[i][j].value.contains(Value.Scream)) {
                     g2d.drawImage(scream, x, y, BLOCK_SIZE, BLOCK_SIZE, this);
                 }
-
             }
         }
     }
