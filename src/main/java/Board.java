@@ -1,4 +1,3 @@
-
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -11,11 +10,10 @@ import java.util.Random;
 public class Board extends JPanel implements ActionListener {
     static final int BLOCK_SIZE = 64;
     private static final int DEFAULT_COUNT_OF_HOLES = 2;
-    private int curNumHoles = 0;
-    private int curNumWalls = 5;
+    private static int n = 5;
+    private static int m = 5;
+    private static Image vampus, gold, wind, smell, hole;
     public Timer timer;
-
-
     public short[][] screenData = {
             {0, 0, 0, 0, 0},
             {0, 1, 1, 0, 0},
@@ -24,17 +22,15 @@ public class Board extends JPanel implements ActionListener {
             {8, 0, 0, 0, 0}
     };
     public Cell[][] cells = new Cell[n][m];
-    private static int n = 5;
-    private static int m = 5;
+    private int curNumHoles = 0;
+    private int curNumWalls = 5;
     private Random random = new Random();
     private Dimension d;
     private Color mazeColor;
-
-    private static Image vampus, gold, wind, smell, hole;
     private int level = 0;
     private int scope = 0;
 
-    private Point Agent_START = new Point(0, n-1);
+    private Point Agent_START = new Point(0, n - 1);
 
     public Board() {
         initVariables();
@@ -45,10 +41,10 @@ public class Board extends JPanel implements ActionListener {
 
     private void fillScreenDataSTR() {
         for (int i = 0; i < n; i++)
-            for (int j = 0; j < m; j++){
-                cells[i][j] = new Cell(new ArrayList<Value>(),new Point(j, i));
-                if(screenData[i][j]==9) cells[i][j].value.add(Value.Glitter);
-                else  if(screenData[i][j]==1) cells[i][j].value.add(Value.Wall);
+            for (int j = 0; j < m; j++) {
+                cells[i][j] = new Cell(new ArrayList<Value>(), new Point(j, i));
+                if (screenData[i][j] == 9) cells[i][j].value.add(Value.Glitter);
+                else if (screenData[i][j] == 1) cells[i][j].value.add(Value.Wall);
             }
 
     }
@@ -61,37 +57,38 @@ public class Board extends JPanel implements ActionListener {
             p = searchEmptyPoint(screenData);
             screenData[p.y][p.x] += 2;
             cells[p.y][p.x].value.add(Value.Hole);
-            if(p.y+1<n) if(isEmptyForBreeze(new Point(p.x,p.y+1))) cells[p.y+1][p.x].value.add(Value.Breeze);
-            if(p.x+1<m) if(isEmptyForBreeze(new Point(p.x+1,p.y)))cells[p.y][p.x+1].value.add(Value.Breeze);
-            if(p.y-1>=0) if(isEmptyForBreeze(new Point(p.x,p.y-1))) cells[p.y-1][p.x].value.add(Value.Breeze);
-            if(p.x-1>=0) if(isEmptyForBreeze(new Point(p.x-1,p.y))) cells[p.y][p.x-1].value.add(Value.Breeze);
+            if (p.y + 1 < n) if (isEmptyForBreeze(new Point(p.x, p.y + 1))) cells[p.y + 1][p.x].value.add(Value.Breeze);
+            if (p.x + 1 < m) if (isEmptyForBreeze(new Point(p.x + 1, p.y))) cells[p.y][p.x + 1].value.add(Value.Breeze);
+            if (p.y - 1 >= 0)
+                if (isEmptyForBreeze(new Point(p.x, p.y - 1))) cells[p.y - 1][p.x].value.add(Value.Breeze);
+            if (p.x - 1 >= 0)
+                if (isEmptyForBreeze(new Point(p.x - 1, p.y))) cells[p.y][p.x - 1].value.add(Value.Breeze);
         }
 
         // vampus
         p = searchEmptyPoint(screenData);
         screenData[p.y][p.x] = 3;
         cells[p.y][p.x].value.add(Value.Vampus);
-        if(p.y+1<n) if(isEmptyForStench(new Point(p.x,p.y+1))) cells[p.y+1][p.x].value.add(Value.Stench);
-        if(p.x+1<m) if(isEmptyForStench(new Point(p.x+1,p.y))) cells[p.y][p.x+1].value.add(Value.Stench);
-        if(p.y-1>=0) if(isEmptyForStench(new Point(p.x,p.y-1))) cells[p.y-1][p.x].value.add(Value.Stench);
-        if(p.x-1>=0) if(isEmptyForStench(new Point(p.x-1,p.y))) cells[p.y][p.x-1].value.add(Value.Stench);
+        if (p.y + 1 < n) if (isEmptyForStench(new Point(p.x, p.y + 1))) cells[p.y + 1][p.x].value.add(Value.Stench);
+        if (p.x + 1 < m) if (isEmptyForStench(new Point(p.x + 1, p.y))) cells[p.y][p.x + 1].value.add(Value.Stench);
+        if (p.y - 1 >= 0) if (isEmptyForStench(new Point(p.x, p.y - 1))) cells[p.y - 1][p.x].value.add(Value.Stench);
+        if (p.x - 1 >= 0) if (isEmptyForStench(new Point(p.x - 1, p.y))) cells[p.y][p.x - 1].value.add(Value.Stench);
     }
 
-    private boolean isEmptyForBreeze(Point p){
-        if(cells[p.y][p.x].value.contains(Value.Hole)) return false;
-       if(cells[p.y][p.x].value.contains(Value.Breeze)) return false;
-       if(cells[p.y][p.x].value.contains(Value.Wall)) return false;
-       if(cells[p.y][p.x].value.contains(Value.Glitter)) return false;
-       return true;
+    private boolean isEmptyForBreeze(Point p) {
+        if (cells[p.y][p.x].value.contains(Value.Hole)) return false;
+        if (cells[p.y][p.x].value.contains(Value.Breeze)) return false;
+        if (cells[p.y][p.x].value.contains(Value.Wall)) return false;
+        return !cells[p.y][p.x].value.contains(Value.Glitter);
     }
 
-    private boolean isEmptyForStench(Point p){
-        if(cells[p.y][p.x].value.contains(Value.Hole)) return false;
-        if(cells[p.y][p.x].value.contains(Value.Stench)) return false;
-        if(cells[p.y][p.x].value.contains(Value.Wall)) return false;
-        if(cells[p.y][p.x].value.contains(Value.Glitter)) return false;
-        return true;
+    private boolean isEmptyForStench(Point p) {
+        if (cells[p.y][p.x].value.contains(Value.Hole)) return false;
+        if (cells[p.y][p.x].value.contains(Value.Stench)) return false;
+        if (cells[p.y][p.x].value.contains(Value.Wall)) return false;
+        return !cells[p.y][p.x].value.contains(Value.Glitter);
     }
+
     private void initBoard() {
         setFocusable(true);
         setBackground(Color.darkGray);
